@@ -7,7 +7,13 @@ export const revalidate = 60;
 export default async function Dashboard() {
   const supabase = await createServerSupabaseClient();
 
-  const [trendingRes, topProductsRes, komisiRes, usersRes] = await Promise.all([
+  // ── Auth ──
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // ── Parallel data fetching ──
+  const [trendingRes, topProductsRes, komisiRes, usersRes, captionsRes] = await Promise.all([
     supabase
       .from("products")
       .select("id", { count: "exact", head: true })
@@ -22,6 +28,12 @@ export default async function Dashboard() {
       .select("commission_estimated")
       .not("commission_estimated", "is", null),
     supabase.rpc("get_active_user_count"),
+    user
+      ? supabase
+          .from("caption_history")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id)
+      : Promise.resolve({ count: 0 }),
   ]);
 
   const trendingCount = trendingRes.count ?? 0;
@@ -31,6 +43,7 @@ export default async function Dashboard() {
     0
   );
   const activeUserCount = (usersRes.data as number | null) ?? 0;
+  const captionGenerated = captionsRes.count ?? 0;
 
   return (
     <DashboardView
@@ -38,7 +51,7 @@ export default async function Dashboard() {
       totalKomisi={totalKomisi}
       topProducts={topProducts}
       activeUserCount={activeUserCount}
-      captionGenerated={0}
+      captionGenerated={captionGenerated}
     />
   );
 }

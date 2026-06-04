@@ -215,6 +215,52 @@ export default function ProductsView({ initialProducts, categories }: ProductsVi
   const [visibleCount, setVisibleCount] = useState(PER_LOAD);
   const [loading, setLoading] = useState(false);
   const sentinelRef = useRef<HTMLDivElement>(null);
+  const [captionModal, setCaptionModal] = useState<{
+    open: boolean;
+    loading: boolean;
+    captions: string[];
+    productId: string;
+    remainingToday: number;
+  }>({ open: false, loading: false, captions: [], productId: "", remainingToday: 3 });
+
+  async function handleGenerateCaption(product: DisplayProduct) {
+    setCaptionModal({
+      open: true,
+      loading: true,
+      captions: [],
+      productId: product.id,
+      remainingToday: 3,
+    });
+
+    try {
+      const res = await fetch("/api/ai/caption", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          product_id: product.id,
+          product_name: product.name,
+          category: product.category,
+          harga: product.harga,
+          terjual: product.terjual,
+        }),
+      });
+
+      if (!res.ok) {
+        throw new Error("API error");
+      }
+
+      const data = await res.json();
+      setCaptionModal((prev) => ({
+        ...prev,
+        loading: false,
+        captions: data.captions ?? [],
+        remainingToday: data.remaining_today ?? 0,
+      }));
+    } catch (err) {
+      console.error("[Caption] Failed to generate:", err);
+      setCaptionModal((prev) => ({ ...prev, loading: false, open: false }));
+    }
+  }
 
   const products: DisplayProduct[] = useMemo(
     () => initialProducts.map((p) => mapDbToDisplay(p, gradients)),
@@ -434,8 +480,14 @@ export default function ProductsView({ initialProducts, categories }: ProductsVi
                     <div className="flex flex-col">
                       <ScoreBadge score={product.score} />
                     </div>
-                    <button className="rounded-lg bg-emerald-500/10 px-3 py-1.5 text-[11px] font-medium text-emerald-400 transition hover:bg-emerald-500/20">
-                      Generate Caption
+                    <button
+                      onClick={() => handleGenerateCaption(product)}
+                      disabled={captionModal.loading && captionModal.productId === product.id}
+                      className="rounded-lg bg-emerald-500/10 px-3 py-1.5 text-[11px] font-medium text-emerald-400 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {captionModal.loading && captionModal.productId === product.id
+                        ? "Generating…"
+                        : "Generate Caption"}
                     </button>
                   </div>
                 </div>
@@ -511,8 +563,14 @@ export default function ProductsView({ initialProducts, categories }: ProductsVi
                 {/* Score + CTA (kanan) */}
                 <div className="flex shrink-0 flex-col items-end gap-2">
                   <ScoreBadge score={product.score} />
-                  <button className="whitespace-nowrap rounded-lg bg-emerald-500/10 px-3 py-1.5 text-[11px] font-medium text-emerald-400 transition hover:bg-emerald-500/20">
-                    Generate Caption
+                  <button
+                    onClick={() => handleGenerateCaption(product)}
+                    disabled={captionModal.loading && captionModal.productId === product.id}
+                    className="whitespace-nowrap rounded-lg bg-emerald-500/10 px-3 py-1.5 text-[11px] font-medium text-emerald-400 transition hover:bg-emerald-500/20 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {captionModal.loading && captionModal.productId === product.id
+                      ? "Generating…"
+                      : "Generate Caption"}
                   </button>
                 </div>
               </div>
@@ -544,6 +602,63 @@ export default function ProductsView({ initialProducts, categories }: ProductsVi
         <p className="py-6 text-center text-xs text-zinc-600">
           Menampilkan semua {filtered.length} produk
         </p>
+      )}
+
+      {/* ====== Caption Modal ====== */}
+      {captionModal.open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="relative w-full max-w-lg rounded-xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl">
+            <button
+              onClick={() => setCaptionModal({ open: false, loading: false, captions: [], productId: "", remainingToday: 3 })}
+              className="absolute right-4 top-4 text-zinc-500 hover:text-zinc-300"
+              aria-label="Tutup"
+            >
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+              </svg>
+            </button>
+
+            <h2 className="mb-1 text-lg font-bold text-white">AI Caption</h2>
+            <p className="mb-4 text-xs text-zinc-500">
+              {captionModal.remainingToday} caption tersisa hari ini
+            </p>
+
+            {captionModal.loading && (
+              <div className="flex items-center justify-center py-10">
+                <div className="flex items-center gap-2 text-sm text-zinc-400">
+                  <SpinnerIcon />
+                  Generating captions…
+                </div>
+              </div>
+            )}
+
+            {!captionModal.loading && captionModal.captions.length === 0 && (
+              <p className="py-6 text-center text-sm text-zinc-500">
+                Gagal menghasilkan caption. Coba lagi nanti.
+              </p>
+            )}
+
+            {!captionModal.loading &&
+              captionModal.captions.map((caption, idx) => (
+                <div
+                  key={idx}
+                  className="mb-3 rounded-lg border border-zinc-800 bg-zinc-800/40 p-3 last:mb-0"
+                >
+                  <p className="text-sm leading-relaxed text-zinc-200">
+                    {caption}
+                  </p>
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(caption).catch(() => {});
+                    }}
+                    className="mt-2 rounded-md bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400 transition hover:bg-emerald-500/20"
+                  >
+                    Copy Caption
+                  </button>
+                </div>
+              ))}
+          </div>
+        </div>
       )}
     </div>
   );
