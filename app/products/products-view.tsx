@@ -220,8 +220,8 @@ export default function ProductsView({ initialProducts, categories }: ProductsVi
     loading: boolean;
     captions: string[];
     productId: string;
-    remainingToday: number;
-  }>({ open: false, loading: false, captions: [], productId: "", remainingToday: 3 });
+  }>({ open: false, loading: false, captions: [], productId: "" });
+  const [remainingToday, setRemainingToday] = useState<number>(3);
 
   async function handleGenerateCaption(product: DisplayProduct) {
     setCaptionModal({
@@ -229,7 +229,6 @@ export default function ProductsView({ initialProducts, categories }: ProductsVi
       loading: true,
       captions: [],
       productId: product.id,
-      remainingToday: 3,
     });
 
     // 30s timeout via AbortController
@@ -261,8 +260,8 @@ export default function ProductsView({ initialProducts, categories }: ProductsVi
         ...prev,
         loading: false,
         captions: data.captions ?? [],
-        remainingToday: data.remaining_today ?? 0,
       }));
+      setRemainingToday(data.remaining_today ?? 0);
     } catch (err) {
       clearTimeout(timeoutId);
       if (err instanceof Error && err.name === "AbortError") {
@@ -621,7 +620,7 @@ export default function ProductsView({ initialProducts, categories }: ProductsVi
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
           <div className="relative w-full max-w-lg rounded-xl border border-zinc-800 bg-zinc-900 p-6 shadow-2xl">
             <button
-              onClick={() => setCaptionModal({ open: false, loading: false, captions: [], productId: "", remainingToday: 3 })}
+              onClick={() => setCaptionModal({ open: false, loading: false, captions: [], productId: "" })}
               className="absolute right-4 top-4 text-zinc-500 hover:text-zinc-300"
               aria-label="Tutup"
             >
@@ -632,7 +631,7 @@ export default function ProductsView({ initialProducts, categories }: ProductsVi
 
             <h2 className="mb-1 text-lg font-bold text-white">AI Caption</h2>
             <p className="mb-4 text-xs text-zinc-500">
-              {captionModal.remainingToday} caption tersisa hari ini
+              {remainingToday} caption tersisa hari ini
             </p>
 
             {captionModal.loading && (
