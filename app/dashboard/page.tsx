@@ -7,7 +7,7 @@ export const revalidate = 60;
 export default async function Dashboard() {
   const supabase = await createServerSupabaseClient();
 
-  const [trendingRes, topProductsRes, komisiRes] = await Promise.all([
+  const [trendingRes, topProductsRes, komisiRes, usersRes] = await Promise.all([
     supabase
       .from("products")
       .select("id", { count: "exact", head: true })
@@ -21,6 +21,7 @@ export default async function Dashboard() {
       .from("products")
       .select("commission_estimated")
       .not("commission_estimated", "is", null),
+    supabase.rpc("get_active_user_count"),
   ]);
 
   const trendingCount = trendingRes.count ?? 0;
@@ -29,12 +30,15 @@ export default async function Dashboard() {
     (sum, r) => sum + (r.commission_estimated ?? 0),
     0
   );
+  const activeUserCount = (usersRes.data as number | null) ?? 0;
 
   return (
     <DashboardView
       trendingCount={trendingCount}
       totalKomisi={totalKomisi}
       topProducts={topProducts}
+      activeUserCount={activeUserCount}
+      captionGenerated={0}
     />
   );
 }

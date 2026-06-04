@@ -52,6 +52,8 @@ interface DashboardViewProps {
   trendingCount: number;
   totalKomisi: number;
   topProducts: ProductWithCategory[];
+  activeUserCount: number;
+  captionGenerated?: number;
 }
 
 function formatCount(n: number): string {
@@ -99,14 +101,20 @@ function ScoreBadge({ score }: { score: number }) {
   );
 }
 
-export default function DashboardView({ trendingCount, totalKomisi, topProducts }: DashboardViewProps) {
+export default function DashboardView({
+  trendingCount,
+  totalKomisi,
+  topProducts,
+  activeUserCount,
+  captionGenerated = 0,
+}: DashboardViewProps) {
   const display: TopProductDisplay[] = topProducts.map(mapTopProduct);
 
   const cardStats = [
-    { label: "Produk Trending", value: formatCount(trendingCount), change: "—", positive: true, icon: TrendingUpIcon },
-    { label: "Total Komisi", value: formatRupiah(totalKomisi), change: "—", positive: true, icon: DollarSignIcon },
-    { label: "Caption Generated", value: "0", change: "—", positive: false, icon: MessageSquareIcon },
-    { label: "Akun Aktif", value: formatCount(1), change: "—", positive: true, icon: UsersIcon },
+    { label: "Produk Trending",   value: formatCount(trendingCount),    icon: TrendingUpIcon },
+    { label: "Total Komisi",      value: formatRupiah(totalKomisi),     icon: DollarSignIcon },
+    { label: "Caption Generated", value: formatCount(captionGenerated), icon: MessageSquareIcon },
+    { label: "Akun Aktif",        value: formatCount(activeUserCount),  icon: UsersIcon },
   ];
 
   return (
@@ -130,17 +138,10 @@ export default function DashboardView({ trendingCount, totalKomisi, topProducts 
               key={stat.label}
               className="group relative overflow-hidden rounded-xl border border-zinc-800/60 bg-zinc-900/50 p-4 transition duration-200 hover:border-zinc-700/60 hover:bg-zinc-900/80"
             >
-              <div className="mb-3 flex items-center justify-between">
+              <div className="mb-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-800/70 text-emerald-400">
                   <Icon />
                 </div>
-                <span
-                  className={`text-xs font-medium ${
-                    stat.positive ? "text-emerald-400" : "text-red-400"
-                  }`}
-                >
-                  {stat.change}
-                </span>
               </div>
               <p className="text-2xl font-bold tracking-tight text-white">
                 {stat.value}
