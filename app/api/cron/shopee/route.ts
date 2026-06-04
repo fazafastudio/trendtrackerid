@@ -27,6 +27,12 @@ interface UpstreamResponse {
 }
 
 export async function GET(request: NextRequest) {
+  console.log('ENV CHECK:', {
+    hasCronSecret: !!process.env.CRON_SECRET,
+    hasScraperSecret: !!process.env.SCRAPER_SECRET,
+    authHeader: request.headers.get('authorization')?.substring(0, 20),
+  })
+
   const timestamp = new Date().toISOString();
 
   // 1. ── Auth: verify Vercel cron secret ─────────────────────────
