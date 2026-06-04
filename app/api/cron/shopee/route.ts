@@ -36,10 +36,11 @@ export async function GET(request: NextRequest) {
     if (authHeader !== `Bearer ${cronSecret}`) {
       return NextResponse.json(
         { success: false, timestamp, message: "Unauthorized" },
-        { status: 401 }
+      { status: 401 }
       );
     }
   }
+  console.log('STEP 1 passed - auth ok')
 
   // 2. ── Env: make sure we can call the upstream scraper ──────────
   const scraperSecret = process.env.SCRAPER_SECRET;
@@ -53,6 +54,7 @@ export async function GET(request: NextRequest) {
       { status: 500 }
     );
   }
+  console.log('STEP 2 passed - scraperSecret:', !!scraperSecret)
 
   // 3. ── Invoke the existing POST /api/scrape/shopee ──────────────
   // Use the request's own origin so this works both on Vercel
@@ -60,6 +62,7 @@ export async function GET(request: NextRequest) {
   // and during local testing.
   const origin = new URL(request.url).origin;
   const upstreamUrl = `${origin}/api/scrape/shopee`;
+  console.log('STEP 3 - calling:', upstreamUrl)
 
   try {
     const upstreamRes = await fetch(upstreamUrl, {
