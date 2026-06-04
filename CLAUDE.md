@@ -51,10 +51,10 @@ SCRAPER_SECRET
 - [X] 1.6 Hapus deprecated src/lib/supabase.ts shim
 
 ## Phase 2 — AI Feature
-- [ ] 2.1 Integrasi AI API (Gemini/OpenAI) untuk generate caption TikTok
-- [ ] 2.2 Sambungkan tombol Generate Caption di products-view
-- [ ] 2.3 Fix AI Score (ganti heuristic jadi formula transparan)
-- [ ] 2.4 Rate limit caption (Free: 3/hari, Pro: unlimited — siapkan logic)
+- [X] 2.1 Integrasi AI API (Gemini/OpenAI) untuk generate caption TikTok
+- [X] 2.2 Sambungkan tombol Generate Caption di products-view
+- [X] 2.3 Fix AI Score (ganti heuristic jadi formula transparan)
+- [X] 2.4 Rate limit caption (Free: 3/hari, Pro: unlimited — siapkan logic)
 
 ## Phase 3 — Growth & Polish
 - [ ] 3.1 TikTok Shop scraper

@@ -32,8 +32,9 @@ Aturan:
 Contoh gaya:
 "Hanya hari ini! Serum Vitamin C ini bikin wajah glowing maksimal ☀️ Udah laku 12rb+ bulan ini! Buruan sebelum kehabisan #SkincareRutin #VitaminC #GlowingSkin"`;
 
-/** Format rupiah for caption context. */
+/** Format rupiah for caption context. Returns empty string if harga is 0/missing. */
 function formatHarga(harga: number): string {
+  if (!harga || harga <= 0) return "";
   if (harga >= 1_000_000) return `Rp${(harga / 1_000_000).toFixed(1)}jt`;
   if (harga >= 1_000) return `Rp${harga.toLocaleString("id-ID")}`;
   return `Rp${harga}`;
@@ -52,10 +53,11 @@ function formatTerjual(n: number): string {
 export async function generateCaptions(
   product: CaptionProduct
 ): Promise<string[]> {
+  const hargaStr = formatHarga(product.harga);
   const userPrompt = `Buat 3 caption promosi untuk produk ini:
 - Nama: ${product.name}
 - Kategori: ${product.category}
-- Harga: ${formatHarga(product.harga)}
+${hargaStr ? `- Harga: ${hargaStr}` : ""}
 - Terjual: ${formatTerjual(product.terjual)}/bulan
 
 Kembalikan hanya 3 caption, pisahkan dengan karakter "|||".`;
@@ -67,9 +69,12 @@ Kembalikan hanya 3 caption, pisahkan dengan karakter "|||".`;
       return await geminiCall(userPrompt);
     } catch {
       // Both failed — return generic fallback
+      const hargaStr = formatHarga(product.harga);
       return [
         `🔥 ${product.name} lagi viral! Udah laku ${formatTerjual(product.terjual)}+ bulan ini. Cobain sekarang sebelum kehabisan! #Rekomendasi #FYP`,
-        `⚡ Promo terbatas! ${product.name} cuma ${formatHarga(product.harga)}. Buruan checkout! #FlashSale #Hemat`,
+        hargaStr
+          ? `⚡ Promo terbatas! ${product.name} cuma ${hargaStr}. Buruan checkout! #FlashSale #Hemat`
+          : `⚡ Promo terbatas! ${product.name} harga terjangkau. Buruan checkout! #FlashSale #Hemat`,
         `💫 Jangan sampai ketinggalan! ${product.name} best seller kategori ${product.category}. Stok terbatas! #BestSeller #Viral`,
       ];
     }
