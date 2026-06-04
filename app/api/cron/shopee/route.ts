@@ -60,7 +60,10 @@ export async function GET(request: NextRequest) {
   // Use the request's own origin so this works both on Vercel
   // (where request.url is https://<app>.vercel.app/api/cron/shopee)
   // and during local testing.
-  const origin = new URL(request.url).origin;
+  const origin = process.env.NEXT_PUBLIC_APP_URL || 
+                 process.env.VERCEL_PROJECT_PRODUCTION_URL && 
+                 `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}` ||
+                 new URL(request.url).origin;
   const upstreamUrl = `${origin}/api/scrape/shopee`;
   console.log('STEP 3 - calling:', upstreamUrl)
 
