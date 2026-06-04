@@ -232,6 +232,10 @@ export default function ProductsView({ initialProducts, categories }: ProductsVi
       remainingToday: 3,
     });
 
+    // 30s timeout via AbortController
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30_000);
+
     try {
       const res = await fetch("/api/ai/caption", {
         method: "POST",
@@ -243,10 +247,13 @@ export default function ProductsView({ initialProducts, categories }: ProductsVi
           harga: product.harga,
           terjual: product.terjual,
         }),
+        signal: controller.signal,
       });
 
+      clearTimeout(timeoutId);
+
       if (!res.ok) {
-        throw new Error("API error");
+        throw new Error(`API error: ${res.status}`);
       }
 
       const data = await res.json();
@@ -257,7 +264,12 @@ export default function ProductsView({ initialProducts, categories }: ProductsVi
         remainingToday: data.remaining_today ?? 0,
       }));
     } catch (err) {
-      console.error("[Caption] Failed to generate:", err);
+      clearTimeout(timeoutId);
+      if (err instanceof Error && err.name === "AbortError") {
+        console.error("[Caption] Request timed out after 30s");
+      } else {
+        console.error("[Caption] Failed to generate:", err);
+      }
       setCaptionModal((prev) => ({ ...prev, loading: false, open: false }));
     }
   }
@@ -639,7 +651,9 @@ export default function ProductsView({ initialProducts, categories }: ProductsVi
             )}
 
             {!captionModal.loading &&
-              captionModal.captions.map((caption, idx) => (
+              captionModal.captions
+                .filter((c): c is string => typeof c === "string" && c.length > 0)
+                .map((caption, idx) => (
                 <div
                   key={idx}
                   className="mb-3 rounded-lg border border-zinc-800 bg-zinc-800/40 p-3 last:mb-0"

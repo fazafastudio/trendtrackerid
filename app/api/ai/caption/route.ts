@@ -59,36 +59,54 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 4. ── Log to caption_history ───────────────
-  await supabase.from("caption_history").insert({
-    user_id: user.id,
-    product_id,
-  });
+  // 4. ── Log to caption_history (non-blocking) ──
+  try {
+    await supabase.from("caption_history").insert({
+      user_id: user.id,
+      product_id,
+    });
+  } catch (err) {
+    console.error("[Caption] Failed to log history:", err);
+    // Don't fail the request — history is best-effort
+  }
 
-  // 5. ── Upsert caption_usage ─────────────────
+  // 5. ── Atomic increment caption_usage via RPC ─
   const today = new Date().toISOString().slice(0, 10);
 
-  const { data: existing } = await supabase
-    .from("caption_usage")
-    .select("count")
-    .eq("user_id", user.id)
-    .eq("usage_date", today)
-    .maybeSingle();
-
-  if (existing) {
-    await supabase
+  let currentCount = 1;
+  try {
+    const { data: rpcCount, error: rpcErr } = await supabase.rpc(
+      "increment_caption_usage",
+      { p_user_id: user.id, p_date: today }
+    );
+    if (rpcErr) throw rpcErr;
+    currentCount = (rpcCount as number) ?? 1;
+  } catch (err) {
+    console.error("[Caption] RPC increment failed, falling back to manual upsert:", err);
+    // Fallback to manual upsert if RPC doesn't exist yet
+    const { data: existing } = await supabase
       .from("caption_usage")
-      .update({ count: existing.count + 1 })
+      .select("count")
       .eq("user_id", user.id)
-      .eq("usage_date", today);
-  } else {
-    await supabase
-      .from("caption_usage")
-      .insert({ user_id: user.id, usage_date: today, count: 1 });
+      .eq("usage_date", today)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase
+        .from("caption_usage")
+        .update({ count: existing.count + 1 })
+        .eq("user_id", user.id)
+        .eq("usage_date", today);
+      currentCount = existing.count + 1;
+    } else {
+      await supabase
+        .from("caption_usage")
+        .insert({ user_id: user.id, usage_date: today, count: 1 });
+      currentCount = 1;
+    }
   }
 
   // 6. ── Compute remaining (free tier = 3/day) ─
-  const currentCount = existing ? existing.count + 1 : 1;
   const remainingToday = Math.max(0, 3 - currentCount);
 
   return NextResponse.json({ captions, remaining_today: remainingToday });
