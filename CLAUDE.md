@@ -46,9 +46,9 @@ SCRAPER_SECRET
 - [X] 1.1 PWA icons (icon-192.png + icon-512.png di public/)
 - [X] 1.2 Vercel cron untuk auto-scraper
 - [X] 1.3 Fix hardcoded stats dashboard (Caption=0, Akun Aktif=1)
-- [ ] 1.4 Product image dari Shopee (image_url → UI)
-- [ ] 1.5 next.config.ts → remotePatterns untuk cf.shopee.co.id
-- [ ] 1.6 Hapus deprecated src/lib/supabase.ts shim
+- [X] 1.4 Product image dari Shopee (image_url → UI)
+- [X] 1.5 next.config.ts → remotePatterns untuk cf.shopee.co.id
+- [X] 1.6 Hapus deprecated src/lib/supabase.ts shim
 
 ## Phase 2 — AI Feature
 - [ ] 2.1 Integrasi AI API (Gemini/OpenAI) untuk generate caption TikTok
