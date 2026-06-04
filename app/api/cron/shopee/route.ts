@@ -27,22 +27,18 @@ interface UpstreamResponse {
 }
 
 export async function GET(request: NextRequest) {
-  console.log('ENV CHECK:', {
-    hasCronSecret: !!process.env.CRON_SECRET,
-    hasScraperSecret: !!process.env.SCRAPER_SECRET,
-    authHeader: request.headers.get('authorization')?.substring(0, 20),
-  })
-
   const timestamp = new Date().toISOString();
 
   // 1. ── Auth: verify Vercel cron secret ─────────────────────────
-  const authHeader = request.headers.get("authorization");
   const cronSecret = process.env.CRON_SECRET;
-  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
-    return NextResponse.json(
-      { success: false, timestamp, message: "Unauthorized" },
-      { status: 401 }
-    );
+  if (cronSecret) {
+    const authHeader = request.headers.get("authorization");
+    if (authHeader !== `Bearer ${cronSecret}`) {
+      return NextResponse.json(
+        { success: false, timestamp, message: "Unauthorized" },
+        { status: 401 }
+      );
+    }
   }
 
   // 2. ── Env: make sure we can call the upstream scraper ──────────
