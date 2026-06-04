@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useMemo, useEffect, useRef } from "react";
 import type { ProductWithCategory, Category } from "@/src/types/database";
 
@@ -63,6 +64,7 @@ type DisplayProduct = {
   terjual: number;
   category: string;
   gradient: string;
+  imageUrl: string | null;
   harga: number;
   rating: number;
   jumlahReview: string;
@@ -153,6 +155,7 @@ function mapDbToDisplay(
     terjual: db.sales_30d,
     category: db.category?.name ?? "Lainnya",
     gradient,
+    imageUrl: db.image_url,
     harga: db.price ?? 0,
     rating: db.rating ?? 0,
     jumlahReview: formatTerjual(db.review_count),
@@ -393,11 +396,22 @@ export default function ProductsView({ initialProducts, categories }: ProductsVi
                 className="group flex flex-col overflow-hidden rounded-xl border border-zinc-800/50 bg-zinc-900/40 transition hover:border-zinc-700/50 hover:bg-zinc-900/70"
               >
                 <div
-                  className={`flex h-28 items-center justify-center bg-gradient-to-br ${product.gradient} sm:h-36`}
+                  className={`relative flex h-28 items-center justify-center overflow-hidden bg-gradient-to-br ${product.gradient} sm:h-36`}
                 >
-                  <span className="text-3xl font-bold text-white/30 sm:text-4xl">
-                    {product.name.charAt(0)}
-                  </span>
+                  {product.imageUrl ? (
+                    <Image
+                      src={product.imageUrl}
+                      alt={product.name}
+                      fill
+                      sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
+                      className="object-cover"
+                      unoptimized
+                    />
+                  ) : (
+                    <span className="text-3xl font-bold text-white/30 sm:text-4xl">
+                      {product.name.charAt(0)}
+                    </span>
+                  )}
                 </div>
 
                 <div className="flex flex-1 flex-col p-3 sm:p-4">
@@ -441,11 +455,22 @@ export default function ProductsView({ initialProducts, categories }: ProductsVi
               >
                 {/* Thumbnail 64x64 */}
                 <div
-                  className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br ${product.gradient} sm:h-16 sm:w-16`}
+                  className={`relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br ${product.gradient} sm:h-16 sm:w-16`}
                 >
-                  <span className="text-lg font-bold text-white/30 sm:text-xl">
-                    {product.name.charAt(0)}
-                  </span>
+                  {product.imageUrl ? (
+                    <Image
+                      src={product.imageUrl}
+                      alt={product.name}
+                      fill
+                      sizes="64px"
+                      className="object-cover"
+                      unoptimized
+                    />
+                  ) : (
+                    <span className="text-lg font-bold text-white/30 sm:text-xl">
+                      {product.name.charAt(0)}
+                    </span>
+                  )}
                 </div>
 
                 {/* Info center */}

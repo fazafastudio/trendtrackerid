@@ -45,7 +45,7 @@ SCRAPER_SECRET
 ## Phase 1 — Stabilisasi
 - [X] 1.1 PWA icons (icon-192.png + icon-512.png di public/)
 - [X] 1.2 Vercel cron untuk auto-scraper
-- [ ] 1.3 Fix hardcoded stats dashboard (Caption=0, Akun Aktif=1)
+- [X] 1.3 Fix hardcoded stats dashboard (Caption=0, Akun Aktif=1)
 - [ ] 1.4 Product image dari Shopee (image_url → UI)
 - [ ] 1.5 next.config.ts → remotePatterns untuk cf.shopee.co.id
 - [ ] 1.6 Hapus deprecated src/lib/supabase.ts shim
