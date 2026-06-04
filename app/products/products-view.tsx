@@ -223,6 +223,14 @@ export default function ProductsView({ initialProducts, categories }: ProductsVi
   }>({ open: false, loading: false, captions: [], productId: "" });
   const [remainingToday, setRemainingToday] = useState<number>(3);
 
+  // Fetch current usage on mount
+  useEffect(() => {
+    fetch("/api/ai/caption/usage")
+      .then((r) => r.json())
+      .then((d) => setRemainingToday(d.remaining_today ?? 3))
+      .catch(() => {});
+  }, []);
+
   async function handleGenerateCaption(product: DisplayProduct) {
     setCaptionModal({
       open: true,
@@ -250,6 +258,12 @@ export default function ProductsView({ initialProducts, categories }: ProductsVi
       });
 
       clearTimeout(timeoutId);
+
+      if (res.status === 429) {
+        setRemainingToday(0);
+        setCaptionModal((prev) => ({ ...prev, loading: false }));
+        return;
+      }
 
       if (!res.ok) {
         throw new Error(`API error: ${res.status}`);

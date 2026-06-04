@@ -25,7 +25,23 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 2. ── Parse body ───────────────────────────
+  // 2. ── Check daily usage BEFORE generation ────
+  const today = new Date().toISOString().slice(0, 10);
+  const { data: usage } = await supabase
+    .from("caption_usage")
+    .select("count")
+    .eq("user_id", user.id)
+    .eq("usage_date", today)
+    .maybeSingle();
+
+  if (usage && usage.count >= 3) {
+    return NextResponse.json(
+      { error: "Batas harian tercapai", remaining_today: 0 },
+      { status: 429 }
+    );
+  }
+
+  // 3. ── Parse body ───────────────────────────
   const body = await request.json().catch(() => ({}));
   const { product_id, product_name, category, harga, terjual } = body as {
     product_id?: string;
@@ -42,7 +58,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 3. ── Generate captions ────────────────────
+  // 4. ── Generate captions ────────────────────
   let captions: string[];
   try {
     captions = await generateCaptions({
@@ -59,7 +75,7 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // 4. ── Log to caption_history (non-blocking) ──
+  // 5. ── Log to caption_history (non-blocking) ──
   try {
     await supabase.from("caption_history").insert({
       user_id: user.id,
@@ -70,9 +86,7 @@ export async function POST(request: NextRequest) {
     // Don't fail the request — history is best-effort
   }
 
-  // 5. ── Atomic increment caption_usage via RPC ─
-  const today = new Date().toISOString().slice(0, 10);
-
+  // 6. ── Atomic increment caption_usage via RPC ─
   let currentCount = 1;
   try {
     const { data: rpcCount, error: rpcErr } = await supabase.rpc(
@@ -106,7 +120,7 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  // 6. ── Compute remaining (free tier = 3/day) ─
+  // 7. ── Compute remaining (free tier = 3/day) ─
   const remainingToday = Math.max(0, 3 - currentCount);
 
   return NextResponse.json({ captions, remaining_today: remainingToday });
