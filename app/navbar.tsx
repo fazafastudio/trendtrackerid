@@ -6,10 +6,13 @@ import Link from "next/link";
 import { createClient } from "@/src/lib/supabase/client";
 import type { User } from "@supabase/supabase-js";
 
+// Module-level singleton so supabase is a stable reference
+// (avoids react-hooks/exhaustive-deps warning on the auth effect below)
+const supabase = createClient();
+
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
-  const supabase = createClient();
 
   const [user, setUser] = useState<User | null>(null);
   const [dropdownOpen, setDropdownOpen] = useState(false);
